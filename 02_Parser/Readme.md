@@ -87,3 +87,40 @@ expression0:
 
 > 稍后，您将看到实际上并非如此。将语法分析和语义分析交织在一起通常是有意义的。 
 
+## 抽象语法树
+
+ 要进行语义分析，我们需要解释输入的代码，或将其翻译为其他格式，例如汇编代码。在旅程的这一部分中，我们将为输入内容构建一个解释器。但是要到达那里，我们首先将输入转换为抽象语法树，也称为AST。
+
+我强烈建议阅读AST的简短说明：
+
+[用AST提升解析游戏的水平](https://medium.com/basecs/leveling-up-ones-parsing-game-with-asts-d7a6fc2400ff)
+
+这篇文章写得很好，确实有助于解释AST的目的和结构。
+
+AST中每个节点的结构在如下：
+
+```C#
+// AST 节点类型
+enum {
+  A_ADD, A_SUBTRACT, A_MULTIPLY, A_DIVIDE, A_INTLIT
+};
+
+// 抽象语法树结构
+struct ASTnode {
+  int op;                               // 将在此树上执行的“操作”
+  struct ASTnode *left;                 // 左右子树
+  struct ASTnode *right;
+  int intvalue;                         // 对于A_INTLIT类型，是整数值
+};
+```
+
+某些AST节点（例如具有op值A_ADD和A_SUBTRACT的AST节点）具有左右两个指向的子AST。稍后，我们将添加或减去子树的值。
+
+或者，具有op值A_INTLIT的AST节点表示一个整数值。它没有子树后代，只有intvalue字段中的一个值。
+
+
+
+
+
+
+
