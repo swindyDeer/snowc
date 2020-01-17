@@ -80,7 +80,11 @@ namespace Scanner
             return c;
         }
 
-        private static (bool isEffect, Token token)? ExecScan()
+        /// <summary>
+        /// 执行扫描
+        /// </summary>
+        /// <returns>isEffect 是否有效token</returns>
+        public static Token ExecScan()
         {
             var c = Skip();
             switch (c)
@@ -88,23 +92,23 @@ namespace Scanner
                 case ' ':
                     return null;
                 case '+':
-                    return new ValueTuple<bool, Token>(true, new Token() { TokenType = TokenType.PLUS });
+                    return new Token() { TokenType = TokenType.PLUS };
                 case '-':
-                    return new ValueTuple<bool, Token>(true, new Token() { TokenType = TokenType.MINUS });
+                    return new Token() { TokenType = TokenType.MINUS };
                 case '*':
-                    return new ValueTuple<bool, Token>(true, new Token() { TokenType = TokenType.STAR });
+                    return new Token() { TokenType = TokenType.STAR };
                 case '/':
-                    return new ValueTuple<bool, Token>(true, new Token() { TokenType = TokenType.SLASH });
+                    return new Token() { TokenType = TokenType.SLASH };
                 default:
                     if(CheckInt(c))
                     {
                         var val = ScanInt(c);
-                        return new ValueTuple<bool, Token>(true, new Token() { TokenType = TokenType.INTLIT,IntValue=val });
+                        return  new Token() { TokenType = TokenType.INTLIT,IntValue=val };
                     }
                     else
                     {
                         Console.WriteLine($"未解析字符{c}");
-                        return new ValueTuple<bool, Token>(false, new Token() { });
+                        return new Token();
                     }
                     
             }
@@ -143,17 +147,18 @@ namespace Scanner
         public static void ScanPrint()
         {
             var token = ExecScan();
-            while(token!=null&&token.Value.isEffect)
+            while(token != null)
             {
                 
-                if(token.Value.token.TokenType==TokenType.INTLIT)
-                    Console.WriteLine($"Token: { token.Value.token.TokenType.ToString()},value: {token.Value.token.IntValue}");
+                if(token.TokenType==TokenType.INTLIT)
+                    Console.WriteLine($"Token: { token.TokenType.ToString()},value: {token.IntValue}");
                 else
-                    Console.WriteLine($"Token: { token.Value.token.TokenType.ToString()}");
+                    Console.WriteLine($"Token: { token.TokenType.ToString()}");
                 token = ExecScan();
             }
 
         }
+
     }
 }
 

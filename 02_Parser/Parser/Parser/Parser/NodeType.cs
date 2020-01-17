@@ -2,45 +2,35 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Scanner
+namespace Parser
 {
     /// <summary>
-    /// token
+    /// ast节点类型
     /// </summary>
-    public class Token
-    {
-        public TokenType TokenType { get; set; }
-
-        public int IntValue { get; set; }
-    }
-
-    /// <summary>
-    /// token类型
-    /// </summary>
-    public enum TokenType
+    public enum NodeType
     {
         /// <summary>
         /// +
         /// </summary>
-        PLUS,
+        ADD,
 
         /// <summary>
         /// -
         /// </summary>
-        MINUS,
+        SUBTRACT, 
 
         /// <summary>
         /// *
         /// </summary>
-        STAR,//
+        MULTIPLY, 
 
         /// <summary>
         /// /
         /// </summary>
-        SLASH,
+        DIVIDE, 
 
         /// <summary>
-        /// 数字
+        /// 整数
         /// </summary>
         INTLIT
     }

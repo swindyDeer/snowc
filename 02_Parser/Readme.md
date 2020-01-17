@@ -106,10 +106,10 @@ enum {
 };
 
 // 抽象语法树结构
-struct ASTnode {
+class ASTnode {
   int op;                               // 将在此树上执行的“操作”
-  struct ASTnode *left;                 // 左右子树
-  struct ASTnode *right;
+  ASTnode left;                 // 左右子树
+  ASTnode right;
   int intvalue;                         // 对于A_INTLIT类型，是整数值
 };
 ```
@@ -118,9 +118,189 @@ struct ASTnode {
 
 或者，具有op值A_INTLIT的AST节点表示一个整数值。它没有子树后代，只有intvalue字段中的一个值。
 
+## 建立AST节点和树
 
+```C#
+    public class AstTree
+    {
+        /// <summary>
+        /// 创建节点
+        /// </summary>
+        /// <param name="nodeType"></param>
+        /// <param name="left"></param>
+        /// <param name="right"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public AstNode MkAstNode(NodeType nodeType,AstNode left,AstNode right,int value)
+        {
+            var node = new AstNode();
 
+            node.NodeType = nodeType;
+            node.LeftNode = left;
+            node.RightNode = right;
+            node.Value = value;
 
+            return node;
+        }
+```
+
+ 在这种情况下，我们可以编写更具体的函数来创建叶AST节点（即一个没有子节点的AST节点），并创建一个有单个子节点的AST节点 
+
+```C#
+        /// <summary>
+        /// 创建无子节点的节点（默认为左节点）
+        /// </summary>
+        /// <param name="nodeType"></param>
+        /// <param name="left"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public AstNode MkAstLeftNode(NodeType nodeType,int value)
+        {
+            return MkAstNode(nodeType,null,null,value);
+        }
+
+        /// <summary>
+        /// 创建只有一个子节点的节点（子节点默认为左节点）
+        /// </summary>
+        /// <param name="nodeType"></param>
+        /// <param name="left"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public AstNode MkAstUnary(NodeType nodeType, AstNode left, int value)
+        {
+            return MkAstNode(nodeType,left,null,value);
+        }
+```
+
+## Ast的目的
+
+我们将使用AST来存储我们认识的每个表达式，以便以后可以递归遍历它以计算表达式的最终值。我们确实想处理数学运算符的优先级。这里有一个例子。
+
+考虑表达式2 * 3 + 4 *5。现在，乘法比加法具有更高的优先级。因此，我们希望将乘法操作数绑定在一起，并在进行加法之前执行这些操作。
+
+如果我们生成的AST树看起来像这样：
+
+```markdown
+          +
+         / \
+        /   \
+       /     \
+      *       *
+     / \     / \
+    2   3   4   5
+```
+
+然后，当遍历树时，我们将首先执行2 * 3，然后执行4 * 5。获得这些结果后，便可以将它们传递到树的根部以执行加法。
+
+## 一个天真的表达解析器
+
+现在，我们可以将扫描器中的令牌值重新用作AST节点操作值，但是我想将令牌和AST节点的概念分开。因此，首先，我将具有一个将令牌值映射到AST节点操作值的函数。这以及解析器的其余部分：
+
+```C#
+/// <summary>
+/// 将令牌转换为AST操作
+/// </summary>
+/// <param name="tokenType"></param>
+/// <returns></returns>
+public static NodeType ConvertToNodeType(TokenType tokenType)
+{
+    switch(tokenType)
+    {
+        case TokenType.PLUS:
+            return (NodeType.ADD);
+        case TokenType.MINUS:
+            return (NodeType.SUBTRACT);
+        case TokenType.STAR:
+            return (NodeType.MULTIPLY);
+        case TokenType.SLASH:
+            return (NodeType.DIVIDE);
+        default:
+            throw new Exception($"未知token类型{tokenType}");
+    }
+}
+```
+
+当我们无法将给定令牌转换为AST节点类型时，将触发switch语句中的默认语句。这将成为解析器中语法检查的一部分。
+
+我们需要一个函数来检查下一个标记是否为整数文字，并构建一个AST节点来保存文字值。这里是：
+
+```C#
+/// <summary>
+/// 获取ast叶节点
+/// </summary>
+/// <param name="token"></param>
+/// <returns></returns>
+public static AstNode GetAstLeafNode(Token token)
+{
+    switch(token.TokenType)
+    {
+            //对于INTLIT令牌，为其创建叶节点
+            //并扫描下一个令牌。否则，对于任何其他令牌类型输出语法错误
+        case TokenType.INTLIT:
+            var node = AstTree.MkAstLeafNode(NodeType.INTLIT,token.IntValue);
+            //ScanResult = Scan.ExecScan();
+            return node;
+        default:
+            throw new Exception($"token类型不是整数：{token.TokenType.ToString()}");
+    }
+
+}
+```
+
+现在我们可以为解析器编写代码:
+
+```C#
+/// <summary>
+/// 获取Ast树
+/// </summary>
+/// <returns></returns>
+public static AstNode GetAstTree()
+{
+    AstNode node, left, right;
+    NodeType nodeType;
+
+    var token = ExecScan();
+    //第一个节点为左节点
+    left = GetAstLeafNode(token);
+
+    //获取下一个token
+    token = ExecScan();
+
+    //如果扫描结束
+    if (token == null)
+        return left;
+
+    //记录根节点类型
+    nodeType = ConvertToNodeType(token.TokenType);
+
+    //获取下一个token
+    token = ExecScan();
+
+    //递归得到右子树
+    right = GetAstTree();
+
+    //合并左右子树
+    node = AstTree.MkAstNode(nodeType,left,right,0);
+
+    return node;
+}
+```
+
+请注意，在此朴素的解析器代码中，没有任何地方可以处理不同的运算符优先级。就目前而言，该代码将所有运算符都视为具有相同的优先级。如果您在解析表达式2 * 3 + 4 * 5时遵循该代码，则会看到它构建了此AST：
+
+```markdown
+     *
+    / \
+   2   +
+      / \
+     3   *
+        / \
+       4   5
+```
+
+这绝对是不正确的。它将乘以4 * 5得到20，然后执行3 + 20得到23，而不是进行2 * 3得到6。那我为什么要这样做呢？我想向您展示，编写一个简单的解析器很容易，但是要使其同时进行语义分析也很困难。
+
+## 解释树
 
 
 
