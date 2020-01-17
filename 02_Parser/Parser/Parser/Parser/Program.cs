@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Scanner;
+using System;
 
 namespace Parser
 {
@@ -6,7 +7,11 @@ namespace Parser
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            var path = "./input1.txt";
+            Scan.Init(path);
+            var tree = Expr.GetAstTree();
+            var val=Expr.InterpretAstTree(tree);
+            Console.WriteLine($"计算结果{val}");
         }
     }
 }

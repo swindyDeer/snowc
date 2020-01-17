@@ -302,5 +302,109 @@ public static AstNode GetAstTree()
 
 ## 解释树
 
+现在我们有了（错误的）AST树，让我们编写一些代码来解释它。同样，我们将编写递归代码遍历树。这是伪代码:
+
+```markdown
+解释树：
+首先，解释左侧子树并获取其值
+然后，解释右侧子树并获取其值
+在树的根节点执行操作
+在两个子树值上，并返回该值
+```
+
+返回正确的AST树：
+
+```markdown
+          +
+         / \
+        /   \
+       /     \
+      *       *
+     / \     / \
+    2   3   4   5
+```
+
+调用结构看起来像：
+
+```markdown
+interpretTree0（带有+的树）：
+	调用interpretTree1（带有*的左树）：
+        调用interpretTree2（带有2的树）：
+            没有数学运算，只返回2
+        调用interpretTree3（带有3的树）：
+            没有数学运算，只需返回3
+        执行2 * 3，返回6
+
+    调用interpretTree1（带有*的右树）：
+    	调用interpretTree2（带有4的树）：
+    		没有数学运算，只需返回4
+    	调用interpretTree3（带有5的树）：
+    		没有数学运算，只需返回5
+    	执行4 * 5，返回20
+
+	执行6 + 20，返回26
+```
+
+## 解释树的代码：
+
+```C#
+/// <summary>
+/// 给定AST，操作运算符并返回最终值
+/// </summary>
+/// <param name="node"></param>
+/// <returns></returns>
+public static int InterpretAstTree(AstNode node)
+{
+    int leftVal = 0, rightVal = 0;
+
+    if (node.LeftNode != null)
+        leftVal = InterpretAstTree(node.LeftNode);
+
+    if (node.RightNode != null)
+        rightVal = InterpretAstTree(node.RightNode);
+
+    switch (node.NodeType)
+    {
+        case NodeType.ADD:
+            Console.WriteLine($"计算值:{leftVal}+{rightVal}={leftVal + rightVal}");
+            return leftVal + rightVal;
+        case NodeType.SUBTRACT:
+            Console.WriteLine($"计算值:{leftVal}-{rightVal}={leftVal - rightVal}");
+            return leftVal - rightVal;
+        case NodeType.MULTIPLY:
+            Console.WriteLine($"计算值:{leftVal}*{rightVal}={leftVal * rightVal}");
+            return leftVal * rightVal;
+        case NodeType.DIVIDE:
+            if (rightVal != 0)
+            {
+                Console.WriteLine($"计算值:{leftVal}/{rightVal}={leftVal / rightVal}");
+                return leftVal / rightVal;
+            }  
+            else
+                throw new ArgumentException(nameof(rightVal));
+        case NodeType.INTLIT:
+            return node.Value;
+        default:
+            throw new Exception($"未知的ast类型：{node.NodeType.ToString()}");
+    }
+
+}
+```
+
+同样，当我们无法解释AST节点类型时，switch语句中的默认语句也会触发。这将成为解析器中语义检查的一部分。
+
+## 构建解析器
+
+```C#
+static void Main(string[] args)
+{
+    var path = "./input1.txt";
+    Scan.Init(path);
+    var tree = Expr.GetAstTree();
+    var val=Expr.InterpretAstTree(tree);
+    Console.WriteLine($"计算结果{val}");
+}
+```
+
 
 

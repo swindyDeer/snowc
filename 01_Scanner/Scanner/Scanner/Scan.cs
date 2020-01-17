@@ -49,12 +49,12 @@ namespace Scanner
         /// 获取下一个字符
         /// </summary>
         /// <returns></returns>
-        private static char Next()
+        private static char? Next()
         {
             //读取结束
             if (Index == Content.Length)
             {
-                return ' ';
+                return null;
             }
 
             var n = Content[Index++];
@@ -70,7 +70,7 @@ namespace Scanner
         /// 跳过空白字符
         /// </summary>
         /// <returns></returns>
-        private static char Skip()
+        private static char? Skip()
         {
             var c = Next();
             while (' ' == c || '\t' == c || '\n' == c || '\r' == c || '\f' == c)
@@ -87,6 +87,10 @@ namespace Scanner
         public static Token ExecScan()
         {
             var c = Skip();
+
+            if (c == null)
+                return null;
+
             switch (c)
             {
                 case ' ':
@@ -119,16 +123,19 @@ namespace Scanner
         /// </summary>
         /// <param name="c"></param>
         /// <returns></returns>
-        private static bool CheckInt(char c)
+        private static bool CheckInt(char? c)
         {
-            return IntStr.Contains(c);
+            if (c == null)
+                return false;
+            
+            return IntStr.Contains(c.ToString());
         }
 
         /// <summary>
         /// 整数扫描
         /// </summary>
         /// <returns></returns>
-        public static int ScanInt(char c)
+        public static int ScanInt(char? c)
         {
             int k, val = 0;
             while(CheckInt(c))
