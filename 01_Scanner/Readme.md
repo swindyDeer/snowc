@@ -10,22 +10,44 @@
 每次扫描，都会将扫描的结果保存到令牌中，我们定义令牌的格式如下：
 
 ```C#
-struct token {
-  int token;
-  int intvalue;
-};
+public class Token
+{
+    public TokenType TokenType { get; set; }
+
+    public int IntValue { get; set; }
+}
 ```
 
  令牌字段可以是以下值之一 :
 
 ```C#
-enum {
-  PLUS,//+ 
-  MINUS,//- 
-  STAR,//* 
-  SLASH,/// 
-  INTLIT//数字
-};
+public enum TokenType
+{
+    /// <summary>
+    /// +
+    /// </summary>
+    PLUS,
+
+    /// <summary>
+    /// -
+    /// </summary>
+    MINUS,
+
+    /// <summary>
+    /// *
+    /// </summary>
+    STAR,
+
+    /// <summary>
+    /// /
+    /// </summary>
+    SLASH,
+
+    /// <summary>
+    /// 数字
+    /// </summary>
+    INTLIT
+}
 ```
 
  如果令牌是INTLIT（即整数文字），则intvalue字段将保存我们在其中扫描的整数的值 
@@ -50,12 +72,12 @@ public static void Init(string path)
 ## 每次读取一个字符
 
 ```C#
-private static char Next()
+private static char? Next()
 {
     //读取结束
     if (Index == Content.Length)
     {
-        return ' ';
+        return null;
     }
 
     var n = Content[Index++];
@@ -68,12 +90,14 @@ private static char Next()
 }
 ```
 
+**这里默认返回null时，文本读取结束。即null为文本结束标志**
+
 ## 跳过空白字符
 
  我们需要一个函数，该函数读取并以静默方式跳过空白字符，直到获得非空白字符，然后将其返回 。
 
 ```C#
-private static char Skip()
+private static char? Skip()
 {
     var c = Next();
     while (' ' == c || '\t' == c || '\n' == c || '\r' == c || '\f' == c)
@@ -89,38 +113,46 @@ private static char Skip()
  现在我们可以在跳过空格的同时读取字符了 ，对于读取到的字符，我们需要将其封装为token返回，同时我们需要知道返回的token是否可用，因为文件中可能包含无法解析的未知字符。
 
 ```C#
-        private static (bool isEffect, Token token)? ExecScan()
-        {
-            var c = Skip();
-            switch (c)
+/// <summary>
+/// 执行扫描
+/// </summary>
+/// <returns>isEffect 是否有效token</returns>
+public static Token ExecScan()
+{
+    var c = Skip();
+
+    if (c == null)
+        return null;
+
+    switch (c)
+    {
+        case ' ':
+            return null;
+        case '+':
+            return new Token() { TokenType = TokenType.PLUS };
+        case '-':
+            return new Token() { TokenType = TokenType.MINUS };
+        case '*':
+            return new Token() { TokenType = TokenType.STAR };
+        case '/':
+            return new Token() { TokenType = TokenType.SLASH };
+        default:
+            if(CheckInt(c))
             {
-                case ' ':
-                    return null;
-                case '+':
-                    return new ValueTuple<bool, Token>(true, new Token() { TokenType = TokenType.PLUS });
-                case '-':
-                    return new ValueTuple<bool, Token>(true, new Token() { TokenType = TokenType.MINUS });
-                case '*':
-                    return new ValueTuple<bool, Token>(true, new Token() { TokenType = TokenType.STAR });
-                case '/':
-                    return new ValueTuple<bool, Token>(true, new Token() { TokenType = TokenType.SLASH });
-                default:
-                    if(CheckInt(c))
-                    {
-                        var val = ScanInt(c);
-                        return new ValueTuple<bool, Token>(true, new Token() { TokenType = TokenType.INTLIT,IntValue=val });
-                    }
-                    else
-                    {
-                        Console.WriteLine($"未解析字符{c}");
-                        return new ValueTuple<bool, Token>(false, new Token() { });
-                    }
-                    
+                var val = ScanInt(c);
+                return  new Token() { TokenType = TokenType.INTLIT,IntValue=val };
             }
-        }
+            else
+            {
+                Console.WriteLine($"未解析字符{c}");
+                return new Token();
+            }
+
+    }
+}
 ```
 
- 简单的单字符令牌就是这样：对于每个识别的字符，将其转换为令牌。你可能会问：为什么不只将识别的字符放入struct令牌？答案是，稍后我们将需要识别多字符标记（例如==）和关键字（例如if和while）。因此，使用枚举值将更加轻松。 
+ 简单的单字符令牌就是这样：对于每个识别的字符，将其转换为令牌。你可能会问：为什么不只将识别的字符放入令牌？答案是，稍后我们将需要识别多字符标记（例如==）和关键字（例如if和while）。因此，使用枚举值将更加轻松。 
 
 ##  整数文字值 
 
@@ -152,20 +184,20 @@ public static int ScanInt(char c)
 ## 打印扫描结果
 
 ```C#
-        public static void ScanPrint()
-        {
-            var token = ExecScan();
-            while(token!=null&&token.Value.isEffect)
-            {
-                
-                if(token.Value.token.TokenType==TokenType.INTLIT)
-                    Console.WriteLine($"Token: { token.Value.token.TokenType.ToString()},value: {token.Value.token.IntValue}");
-                else
-                    Console.WriteLine($"Token: { token.Value.token.TokenType.ToString()}");
-                token = ExecScan();
-            }
+public static void ScanPrint()
+{
+    var token = ExecScan();
+    while(token != null)
+    {
 
-        }
+        if(token.TokenType==TokenType.INTLIT)
+            Console.WriteLine($"Token: { token.TokenType.ToString()},value: {token.IntValue}");
+        else
+            Console.WriteLine($"Token: { token.TokenType.ToString()}");
+        token = ExecScan();
+    }
+
+}
 ```
 
 在main函数中指定测试文件：

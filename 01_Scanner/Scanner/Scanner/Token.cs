@@ -32,7 +32,7 @@ namespace Scanner
         /// <summary>
         /// *
         /// </summary>
-        STAR,//
+        STAR,
 
         /// <summary>
         /// /
