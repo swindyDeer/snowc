@@ -7,7 +7,7 @@ namespace Parser
     public class Expr
     {
         /// <summary>
-        /// 将令牌转换为AST操作
+        /// 将令牌类型转换为AST类型操作
         /// </summary>
         /// <param name="tokenType"></param>
         /// <returns></returns>
@@ -73,9 +73,6 @@ namespace Parser
 
             //记录根节点类型
             nodeType = ConvertToNodeType(token.TokenType);
-
-            //获取下一个token
-            //token = ExecScan();
 
             //递归得到右子树
             right = GetAstTree();

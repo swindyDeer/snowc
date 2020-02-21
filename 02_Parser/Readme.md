@@ -178,7 +178,7 @@ class ASTnode {
 
 考虑表达式2 * 3 + 4 *5。现在，乘法比加法具有更高的优先级。因此，我们希望将乘法操作数绑定在一起，并在进行加法之前执行这些操作。
 
-如果我们生成的AST树看起来像这样：
+**假设我们生成的AST树**看起来像这样：
 
 ```markdown
           +
@@ -260,11 +260,13 @@ public static AstNode GetAstTree()
     NodeType nodeType;
 
     var token = ExecScan();
+    Console.WriteLine($"节点类型：{token?.TokenType.ToString()},节点值：{token?.IntValue}");
     //第一个节点为左节点
     left = GetAstLeafNode(token);
 
     //获取下一个token
     token = ExecScan();
+    Console.WriteLine($"节点类型：{token?.TokenType.ToString()},节点值：{token?.IntValue}");
 
     //如果扫描结束
     if (token == null)
@@ -273,14 +275,11 @@ public static AstNode GetAstTree()
     //记录根节点类型
     nodeType = ConvertToNodeType(token.TokenType);
 
-    //获取下一个token
-    token = ExecScan();
-
     //递归得到右子树
     right = GetAstTree();
 
     //合并左右子树
-    node = AstTree.MkAstNode(nodeType,left,right,0);
+    node = AstTree.MkAstNode(nodeType, left, right, 0);
 
     return node;
 }
@@ -298,7 +297,7 @@ public static AstNode GetAstTree()
        4   5
 ```
 
-这绝对是不正确的。它将乘以4 * 5得到20，然后执行3 + 20得到23，而不是进行2 * 3得到6。那我为什么要这样做呢？我想向您展示，编写一个简单的解析器很容易，但是要使其同时进行语义分析也很困难。
+显然生成的ast数与我们的**假设**不太符合。它将乘以4 * 5得到20，然后执行3 + 20得到23，而不是进行2 * 3得到6。那我为什么要这样做呢？我想向您展示，编写一个简单的解析器很容易，但是要使其同时进行语义分析也很困难。
 
 ## 解释树
 
@@ -312,7 +311,7 @@ public static AstNode GetAstTree()
 在两个子树值上，并返回该值
 ```
 
-返回正确的AST树：
+按照假设正确的AST树：
 
 ```markdown
           +
@@ -344,6 +343,42 @@ interpretTree0（带有+的树）：
 
 	执行6 + 20，返回26
 ```
+
+实际上我们的ast树结构是：
+
+```markdown
+     *
+    / \
+   2   +
+      / \
+     3   *
+        / \
+       4   5
+```
+
+实际调用结构是：
+
+```mark
+interpretTree0（带有*的树）：
+	调用interpretTree1（带有2的左树）：
+            没有子节点，只返回2
+    
+    调用interpretTree1（带有+的右树）：
+    	调用interpretTree2（带有3的右树）：
+    		没有子节点，只需返回3
+    		
+    	调用interpretTree2（带有*的左树）：
+    		调用interpretTree3（带有4的右树）
+    			没有子节点，只需返回4
+    		
+    		调用interpretTree3（带有5的左树）
+				没有子节点，只需返回5
+		执行4*5，返回20
+	执行3+20，返回23
+执行2*23，返回46
+```
+
+
 
 ## 解释树的代码：
 
