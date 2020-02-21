@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29403.142
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Precedence", "Precedence\Precedence.csproj", "{DBC2EB1C-7604-4DC7-A9C4-08BD19633A9E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Parser", "..\..\..\02_Parser\Parser\Parser\Parser\Parser.csproj", "{92BD5D0D-8214-4315-9C04-AACB08C77A4E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DBC2EB1C-7604-4DC7-A9C4-08BD19633A9E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DBC2EB1C-7604-4DC7-A9C4-08BD19633A9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DBC2EB1C-7604-4DC7-A9C4-08BD19633A9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DBC2EB1C-7604-4DC7-A9C4-08BD19633A9E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{92BD5D0D-8214-4315-9C04-AACB08C77A4E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{92BD5D0D-8214-4315-9C04-AACB08C77A4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{92BD5D0D-8214-4315-9C04-AACB08C77A4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{92BD5D0D-8214-4315-9C04-AACB08C77A4E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {28F2E72D-E5E8-44A3-B0DD-959E9006699E}
+	EndGlobalSection
+EndGlobal
