@@ -120,6 +120,7 @@ namespace Precedence
 
             while (true)
             {
+                //+或-运算符
                 nodeType = ConvertToNodeType(token.TokenType);
 
                 //获取优先级更高的右子树，返回时可以明确是遇到了+或-运算符或终止符

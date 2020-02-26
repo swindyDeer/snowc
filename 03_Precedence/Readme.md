@@ -86,3 +86,115 @@ number:  T_INTLIT
 
 ## 在递归下降解析器中执行上述操作
 
+我们使用GetMultiplicativeAstTree来处理*与/运算符，GetAdditiveAstTree来处理+与-运算符。
+
+这两个函数都将读入某个token。 然后，当有下列优先级相同的运算符时，每个函数将解析更多的输入并将左右两半与第一个运算符结合起来 组成子树。
+
+```c#
+/// <summary>
+/// 返回一个根为“ +”或“ - ”二进制运算符的 AST 树
+/// </summary>
+/// <returns></returns>
+private static AstNode GetAdditiveAstTree()
+{
+    AstNode left, right;
+    NodeType nodeType;
+
+    //获取更高优先级的左子树
+    left = GetMultiplicativeAstTree();
+
+    //token,正常情况应为运算符+或-运算符或终止符
+    //如果扫描结束
+    if (token == null)
+        return left;
+
+    while (true)
+    {
+        //+或-运算符
+        nodeType = ConvertToNodeType(token.TokenType);
+
+        //获取优先级更高的右子树，返回时可以明确是遇到了+或-运算符或终止符
+        right = GetMultiplicativeAstTree();
+
+        left = AstTree.MkAstNode(nodeType, left, right, 0);
+
+        //token,正常情况应为运算符+或-运算符或终止符
+        //如果扫描结束
+        if (token == null)
+            break;
+    }
+
+    return left;
+}
+```
+
+```c#
+/// <summary>
+/// 返回一个根为“ * ”或“ / ”二进制运算符的 AST 树
+/// </summary>
+/// <returns></returns>
+private static AstNode GetMultiplicativeAstTree()
+{
+    AstNode left, right;
+    NodeType nodeType;
+
+    token = ExecScan();
+    Console.WriteLine($"节点类型：{token?.TokenType.ToString()},节点值：{token?.IntValue}");
+    //第一个节点为左节点
+    left = GetAstLeafNode(token);
+
+    //获取下一个token,正常情况应为运算符
+    token = ExecScan();
+    Console.WriteLine($"节点类型：{token?.TokenType.ToString()},节点值：{token?.IntValue}");
+
+    //如果扫描结束
+    if (token == null)
+        return left;
+
+    // 当token类型是*或/
+    while (token.TokenType == TokenType.STAR || token.TokenType == TokenType.SLASH)
+    {
+        nodeType = ConvertToNodeType(token.TokenType);
+
+        //获取下一个token
+        token = ExecScan();
+        Console.WriteLine($"节点类型：{token?.TokenType.ToString()},节点值：{token?.IntValue}");
+        right = GetAstLeafNode(token);
+
+        //合并左右节点
+        left = AstTree.MkAstNode(nodeType, left, right, 0);
+
+        //获取下一节点
+        token = ExecScan();
+        Console.WriteLine($"节点类型：{token?.TokenType.ToString()},节点值：{token?.IntValue}");
+        //如果扫描结束
+        if (token == null)
+            break;
+    }
+
+    return left;
+}
+```
+
+与上一节不同的地方是，Expr1类中使用了一个全局token，来处理while循环结束后最后获取的token类型无法获取到的问题。
+
+正常情况下，算术表达式的第一个字符应为数字，我们在GetAdditiveAstTree方法中使用GetMultiplicativeAstTree方法来处理，GetMultiplicativeAstTree方法回值遇到+-运算符或表达式终止时时返回。
+
+在GetAdditiveAstTree方法中，当我们执行 while 循环时，我们知道有一个“ + ”或“-”操作符。 执行循环，获取乘法表达式，结合左右子树为新的左子树。
+
+GetMultiplicativeAstTree方法将首先创建一个左节点，并读取下一个token，如果符合循环条件会创建一个右节点，结合左右子树为新的左子树，并继续循环。
+
+构建的树：
+
+```markdown
+      -
+     / \
+    /   \
+   /     \
+  +       /
+ / \     / \
+2   *   8   3
+   / \      
+  3   5 
+```
+
