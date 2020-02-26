@@ -5,4 +5,8 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\02_Parser\Parser\Parser\Parser\Parser.csproj" />
+  </ItemGroup>
+
 </Project>
