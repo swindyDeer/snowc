@@ -226,3 +226,62 @@ public static Dictionary<NodeType, int> PrecedenceDic = new Dictionary<NodeType,
 ```
 
 表中有3个优先级 ，数值大的优先级高。
+
+ast树的生成代码：
+
+```c#
+/// <summary>
+/// 返回AstTree
+/// </summary>
+/// <param name="ptp">优先级</param>
+/// <returns></returns>
+public static AstNode GetAstTree(int ptp = 0)
+{
+    AstNode left, right;
+    NodeType nodeType;
+
+    token = ExecScan();
+    Console.WriteLine($"节点类型：{token?.TokenType.ToString()},节点值：{token?.IntValue}");
+
+    //第一个节点为左节点
+    left = GetAstLeafNode(token);
+
+    token = ExecScan();
+    Console.WriteLine($"节点类型：{token?.TokenType.ToString()},节点值：{token?.IntValue}");
+
+    //如果扫描结束
+    if (token == null)
+        return left;
+
+    //运算符节点类型
+    nodeType = ConvertToNodeType(token.TokenType);
+
+    while (PrecedenceDic[nodeType] > ptp)
+    {
+
+        //优先级高的构建为右子树，遇到低优先级的运算符返回
+        right = GetAstTree(PrecedenceDic[nodeType]);
+
+        //合并子树
+        left = AstTree.MkAstNode(nodeType, left, right, 0);
+
+        //如果扫描结束
+        if (token == null)
+            break;
+
+        //更新当前令牌的详细信息,即低优先级令牌
+        nodeType = ConvertToNodeType(token.TokenType);
+        Console.WriteLine($"低优先级令牌:{PrecedenceDic[nodeType]}");
+    }
+
+    return left;
+}
+```
+
+一开始读取到的是数字，我们初始化ptp为0；
+
+使用 Pratt 解析器，当下一个操作符的优先级高于我们当前的标记时，我们使用                 right = GetAstTree(PrecedenceDic[nodeType])来提高操作符的优先级 ，优先级高的运算符会被创建为右子树，当遇到比当前优先级低的运算符，返回一个right子树。
+
+合并左右子树后需要设置优先级低的运算符到变量nodeType。
+
+递归下降解析与Pratt的实现思想是类似的，一个基于表达式递归实现，高优先级表达式优先结合。一个基于运算符优先级递归实现，高优先级运算符优先结合。

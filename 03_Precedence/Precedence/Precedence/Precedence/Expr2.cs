@@ -51,16 +51,6 @@ namespace Precedence
             }
         }
 
-        /// <summary>
-        /// 获取运算符优先级
-        /// </summary>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        private static int OperatorPrecedence(Token token)
-        {
-            var nodeType = ConvertToNodeType(token.TokenType);
-            return PrecedenceDic[nodeType];
-        }
 
         /// <summary>
         /// 获取ast叶节点
@@ -75,7 +65,6 @@ namespace Precedence
                 //并扫描下一个令牌。否则，对于任何其他令牌类型输出语法错误
                 case TokenType.INTLIT:
                     var node = AstTree.MkAstLeafNode(NodeType.INTLIT, token.IntValue);
-                    //ScanResult = Scan.ExecScan();
                     return node;
                 default:
                     throw new Exception($"token类型不是整数：{token.TokenType.ToString()}");
@@ -86,7 +75,7 @@ namespace Precedence
         /// <summary>
         /// 返回AstTree
         /// </summary>
-        /// <param name="ptp">参数优先级</param>
+        /// <param name="ptp">优先级</param>
         /// <returns></returns>
         public static AstNode GetAstTree(int ptp = 0)
         {
