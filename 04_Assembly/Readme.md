@@ -118,3 +118,108 @@ public static void GenerateCode(AstNode node)
 }
 ```
 
+###   X86-64汇编代码生成器 
+
+ 这就是通用代码生成器。 现在我们需要看看一些真正的汇编代码的生成方法。 目前，我们的目标是 x86-64 CPU，运行在 Linux 平台。
+
+#### 分配寄存器
+
+ 任何 CPU 的寄存器数量都是有限的。 我们必须分配一个寄存器来保存整数字面值，并对它们执行相关计算。 一旦我们使用了一整数字面值后，我们通常可以丢弃这个值，从而**释放保存它的寄存器**。 然后我们可以为另一个值重新分配使用这个寄存器。  
+
+ 有三个函数处理寄存器分配 ：
+
+*  FreeAllRegisters() ：将所有寄存器设为可用 
+*  AllocRegister()：分配可用寄存器 
+*   FreeRegister() ： 释放已经分配的寄存器
+
+ 该代码适用于通用寄存器: r0、 r1、 r2和 r3。 有一个包含实际寄存器名称的字符串表: 
+
+```C#
+/// <summary>
+/// 寄存器列表
+/// </summary>
+private static Dictionary<string, int> RegList = new Dictionary<string, int>
+{
+    { "r8",0},
+    { "r9",0},
+    { "r10",0},
+    { "r11",0}
+};
+
+/// <summary>
+/// 将所有寄存器设为可用
+/// </summary>
+public void FreeAllRegisters()
+{
+    foreach(var key in RegList.Keys)
+    {
+        RegList[key] = 0;
+    }
+}
+
+/// <summary>
+/// 分配一个可用的寄存器
+/// </summary>
+/// <returns></returns>
+public string AllocRegister()
+{
+    foreach (var key in RegList.Keys)
+    {
+        if (RegList[key] == 0)
+            return key;
+    }
+
+    Console.WriteLine("没有可用的寄存器");
+    return null;
+}
+
+/// <summary>
+/// 释放已分配的寄存器
+/// </summary>
+public void FreeRegister(string key)
+{
+    if (RegList.Keys.Contains(key))
+        RegList[key] = 0;
+}
+```
+
+#### 加载寄存器
+
+ 分配一个寄存器，然后一个 movq 指令将一个文本值加载到分配的寄存器中 ：
+
+```c#
+/// <summary>
+/// 将整数文字值加载到寄存器中
+/// </summary>
+/// <param name="value"></param>
+/// <returns></returns>
+public void LoadReg(int value)
+{
+    var reg = AllocRegister();
+    CodeContents.Append($"\tmovq\t{value},{reg}\n");
+}
+```
+
+#### 两个寄存器相加
+
+ CgAdd ()接受两个寄存器编号，并生成将它们相加的代码。 结果保存在两个寄存器中的一个中，然后释放另一个以备将来使用: 
+
+```C#
+/// <summary>
+/// 相加
+/// </summary>
+/// <param name="r1"></param>
+/// <param name="r2"></param>
+/// <returns></returns>
+public string CgAdd(string r1,string r2)
+{
+    CodeContents.Append($"\taddq\t{RegList[r1]},{RegList[r2]}\n");
+    FreeRegister(r2);
+    return r1;
+}
+```
+
+ 注意，加法这里是把 r2加到 r1，不是 r1加到 r2。 返回寄存器r1的标识 。
+
+
+ #### 两个寄存器相乘
