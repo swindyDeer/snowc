@@ -1,8 +1,21 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\03_Precedence\Precedence\Precedence\Precedence\Precedence.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Parser">
+      <HintPath>..\..\..\..\02_Parser\Parser\Parser\Parser\bin\Debug\netcoreapp2.2\Parser.dll</HintPath>
+    </Reference>
+    <Reference Include="Scanner">
+      <HintPath>..\..\..\..\01_Scanner\Scanner\Scanner\bin\Debug\netcoreapp2.2\Scanner.dll</HintPath>
+    </Reference>
+  </ItemGroup>
 
 </Project>

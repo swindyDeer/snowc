@@ -214,12 +214,88 @@ public void LoadReg(int value)
 public string CgAdd(string r1,string r2)
 {
     CodeContents.Append($"\taddq\t{RegList[r1]},{RegList[r2]}\n");
+    FreeRegister(r1);
+    return r2;
+}
+```
+
+ 注意，加法这里是把 r1加到 r2，返回寄存器r2的标识 。
+
+
+ #### 两个寄存器相乘
+
+```c#
+/// <summary>
+/// 相乘
+/// </summary>
+/// <param name="r1"></param>
+/// <param name="r2"></param>
+/// <returns></returns>
+public string CgMul(string r1, string r2)
+{
+    CodeContents.Append($"\timulq\t{RegList[r1]},{RegList[r2]}\n");
+    FreeRegister(r1);
+    return r2;
+}
+```
+
+#### 两个寄存器相减
+
+```C#
+/// <summary>
+/// 相减
+/// </summary>
+/// <param name="r1"></param>
+/// <param name="r2"></param>
+/// <returns></returns>
+public string CgSub(string r1, string r2)
+{
+    CodeContents.Append($"\tsubq\t{RegList[r2]},{RegList[r1]}\n");
     FreeRegister(r2);
     return r1;
 }
 ```
 
- 注意，加法这里是把 r2加到 r1，不是 r1加到 r2。 返回寄存器r1的标识 。
+ 减法是不可交换的: 我们必须正确排序。第一个寄存器中减去 第二个寄存器，所以我们返回第一个寄存器，释放第二个寄存器 
+
+#### 两个寄存器相除
+
+ 除法也是不可交换的，所以前面的注释适用。 在 x86-64上，情况更加复杂。 我们需要将 r1复制给% rax 。 这需要将 cqo 扩展到八个字节。 然后，idivq 将% rax 除以 r2中的除数，将商留在% rax 中，因此我们需要将它复制到 r1或 r2中。 然后我们可以释放另一个寄存器 ：
+
+```C#
+/// <summary>
+/// 相除
+/// </summary>
+/// <param name="r1"></param>
+/// <param name="r2"></param>
+/// <returns></returns>
+public string CgDiv(string r1, string r2)
+{
+    CodeContents.Append($"\tmovq\t{RegList[r1]},%rax\n");
+    CodeContents.Append("\tcqo\n");
+    CodeContents.Append($"\tidivq\t{RegList[r2]}\n");
+    CodeContents.Append($"\tmovq\t%rax,{RegList[r1]}\n");
+    FreeRegister(r2);
+    return r1;
+}
+```
+
+####  打印一个寄存器
+
+ 没有任何x86-64指令可将寄存器输出为十进制数字。 为了解决此问题，汇编程序的序言包含一个名为printint（）的函数，该函数带有一个寄存器参数，并将寄存器中的数值以十进制形式将其打印出来。 
+
+```C#
+/// <summary>
+/// 对给定的寄存器调用 打印函数printint ()
+/// </summary>
+/// <param name="r"></param>
+public void CgPrintInt(string r)
+{
+    CodeContents.Append($"\tmovq\t{RegList[r]}, %rdi\n");
+    CodeContents.Append("\tcall\tprintint\n");
+    FreeRegister(r);
+}
+```
 
 
- #### 两个寄存器相乘
+
