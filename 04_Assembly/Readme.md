@@ -57,33 +57,33 @@ public static int InterpretAstTree(AstNode node)
 
 ```c#
 //给定AST，生成递归汇编代码
-public static int GenAST(AstNode node)
+public static string GenAST(AstNode node)
 {
-    int leftVal = 0, rightVal = 0;
+    string leftReg=null, rightReg=null;
 
     if (node.LeftNode != null)
-        leftVal = GenAST(node.LeftNode);
+        leftReg = GenAST(node.LeftNode);
 
     if (node.RightNode != null)
-        rightVal = GenAST(node.RightNode);
+        rightReg = GenAST(node.RightNode);
 
     switch (node.NodeType)
     {
         case NodeType.ADD:
-            return CgAdd(leftVal,rightVal);
+            return CodeGenerate.CgAdd(leftReg, rightReg);
         case NodeType.SUBTRACT:
-            return CgSub(leftVal,rightVal);
+            return CodeGenerate.CgSub(leftReg, rightReg);
         case NodeType.MULTIPLY:
-            return CgMul(leftVal,rightVal);
+            return CodeGenerate.CgMul(leftReg, rightReg);
         case NodeType.DIVIDE:
-            if (rightVal != 0)
+            if (rightReg != null)
             {
-                return CgDiv(leftVal,rightVal);;
+                return CodeGenerate.CgDiv(leftReg, rightReg); ;
             }
             else
-                throw new ArgumentException(nameof(rightVal));
+                throw new ArgumentException(nameof(rightReg));
         case NodeType.INTLIT:
-            return CgLoad(node.Value);
+            return CodeGenerate.LoadReg(node.Value);
         default:
             throw new Exception($"未知的ast类型：{node.NodeType.ToString()}");
     }
@@ -105,16 +105,17 @@ public static int GenAST(AstNode node)
  GenAst ()只计算给它的表达式的值。 我们需要打印出最后的计算结果。 我们还需要将我们生成的汇编代码包装成一些前导代码和尾随代码。 
 
 ```C#
-public static void GenerateCode(AstNode node)
+/// <summary>
+/// 生成代码
+/// </summary>
+/// <param name="node"></param>
+public static void GenCode(AstNode node)
 {
-    int reg;
-    //打印出初始化汇编代码
-    CgPreamble();
-    reg= GenAST(node);
-    //打印出使用的寄存器
-    CgPrintint(reg);
-    //打印出生成的汇编代码
-    CgPostamble(reg);
+    CodeGenerate.CgPreamble();
+    var reg = GenAST(node);
+    CodeGenerate.CgPrintInt(reg);
+    CodeGenerate.CgPostamble();
+    CodeGenerate.SaveCodeFile(null);
 }
 ```
 
@@ -138,22 +139,24 @@ public static void GenerateCode(AstNode node)
 /// <summary>
 /// 寄存器列表
 /// </summary>
-private static Dictionary<string, int> RegList = new Dictionary<string, int>
+private static Dictionary<string, int?> RegList = new Dictionary<string, int?>
 {
-    { "r8",0},
-    { "r9",0},
-    { "r10",0},
-    { "r11",0}
+    { "%r8",null},
+    { "%r9",null},
+    { "%r10",null},
+    { "%r11",null}
 };
 
 /// <summary>
 /// 将所有寄存器设为可用
 /// </summary>
-public void FreeAllRegisters()
+public static void FreeAllRegisters()
 {
-    foreach(var key in RegList.Keys)
+    var keys = RegList.Keys.ToArray();
+    for(int i=0;i<keys.Length;i++)
     {
-        RegList[key] = 0;
+        var key = keys[i];
+        RegList[key] = null;
     }
 }
 
@@ -161,25 +164,24 @@ public void FreeAllRegisters()
 /// 分配一个可用的寄存器
 /// </summary>
 /// <returns></returns>
-public string AllocRegister()
+public static string AllocRegister()
 {
     foreach (var key in RegList.Keys)
     {
-        if (RegList[key] == 0)
+        if (RegList[key] == null)
             return key;
     }
 
-    Console.WriteLine("没有可用的寄存器");
-    return null;
+    throw new Exception("没有可用的寄存器");
 }
 
 /// <summary>
 /// 释放已分配的寄存器
 /// </summary>
-public void FreeRegister(string key)
+public static void FreeRegister(string key)
 {
     if (RegList.Keys.Contains(key))
-        RegList[key] = 0;
+        RegList[key] = null;
 }
 ```
 
@@ -193,10 +195,13 @@ public void FreeRegister(string key)
 /// </summary>
 /// <param name="value"></param>
 /// <returns></returns>
-public void LoadReg(int value)
+public static string LoadReg(int value)
 {
     var reg = AllocRegister();
+    //设为已经占用
+    RegList[reg] = value;
     CodeContents.Append($"\tmovq\t{value},{reg}\n");
+    return reg;
 }
 ```
 
@@ -211,9 +216,9 @@ public void LoadReg(int value)
 /// <param name="r1"></param>
 /// <param name="r2"></param>
 /// <returns></returns>
-public string CgAdd(string r1,string r2)
+public static string CgAdd(string r1,string r2)
 {
-    CodeContents.Append($"\taddq\t{RegList[r1]},{RegList[r2]}\n");
+    CodeContents.Append($"\taddq\t{r1},{r2}\n");
     FreeRegister(r1);
     return r2;
 }
@@ -231,9 +236,9 @@ public string CgAdd(string r1,string r2)
 /// <param name="r1"></param>
 /// <param name="r2"></param>
 /// <returns></returns>
-public string CgMul(string r1, string r2)
+public static string CgMul(string r1, string r2)
 {
-    CodeContents.Append($"\timulq\t{RegList[r1]},{RegList[r2]}\n");
+    CodeContents.Append($"\timulq\t{r1},{r2}\n");
     FreeRegister(r1);
     return r2;
 }
@@ -248,9 +253,9 @@ public string CgMul(string r1, string r2)
 /// <param name="r1"></param>
 /// <param name="r2"></param>
 /// <returns></returns>
-public string CgSub(string r1, string r2)
+public static string CgSub(string r1, string r2)
 {
-    CodeContents.Append($"\tsubq\t{RegList[r2]},{RegList[r1]}\n");
+    CodeContents.Append($"\tsubq\t{r2},{r1}\n");
     FreeRegister(r2);
     return r1;
 }
@@ -269,12 +274,12 @@ public string CgSub(string r1, string r2)
 /// <param name="r1"></param>
 /// <param name="r2"></param>
 /// <returns></returns>
-public string CgDiv(string r1, string r2)
+public static string CgDiv(string r1, string r2)
 {
-    CodeContents.Append($"\tmovq\t{RegList[r1]},%rax\n");
+    CodeContents.Append($"\tmovq\t{r1},%rax\n");
     CodeContents.Append("\tcqo\n");
-    CodeContents.Append($"\tidivq\t{RegList[r2]}\n");
-    CodeContents.Append($"\tmovq\t%rax,{RegList[r1]}\n");
+    CodeContents.Append($"\tidivq\t{r2}\n");
+    CodeContents.Append($"\tmovq\t%rax,{r1}\n");
     FreeRegister(r2);
     return r1;
 }
@@ -289,13 +294,13 @@ public string CgDiv(string r1, string r2)
 /// 对给定的寄存器调用 打印函数printint ()
 /// </summary>
 /// <param name="r"></param>
-public void CgPrintInt(string r)
+public static void CgPrintInt(string r)
 {
-    CodeContents.Append($"\tmovq\t{RegList[r]}, %rdi\n");
+    CodeContents.Append($"\tmovq\t{r}, %rdi\n");
     CodeContents.Append("\tcall\tprintint\n");
     FreeRegister(r);
 }
 ```
 
-
+ Linux x86-64希望函数的第一个参数位于% rdi 寄存器中，因此在调用 printint 之前，我们将寄存器移动到% rdi 中。 
 
